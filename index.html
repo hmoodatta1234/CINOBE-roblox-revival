@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CINOBE Revival</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-b from-blue-400 to-purple-500 h-screen flex flex-col">
+
+  <!-- Top Navbar -->
+  <nav class="w-full bg-gray-900 flex items-center justify-between px-4 py-3 shadow-md">
+    <div class="flex space-x-4">
+      <button class="text-white hover:text-yellow-400" onclick="renderPage('home')" id="nav-home">🏠 Home</button>
+      <button class="text-white hover:text-yellow-400" onclick="renderPage('games')" id="nav-games">🎮 Games</button>
+      <button class="text-white hover:text-yellow-400" onclick="renderPage('download')" id="nav-download">⬇️ Download</button>
+      <button class="text-white hover:text-yellow-400" onclick="renderPage('avatar')" id="nav-avatar">🧍 Avatar</button>
+      <button class="text-white hover:text-yellow-400" onclick="renderPage('catalog')" id="nav-catalog">🛒 Catalog</button>
+      <button class="text-white hover:text-yellow-400" onclick="getRobux()" id="nav-robux">💰 Robux</button>
+    </div>
+    <div class="relative">
+      <button class="text-white hover:text-yellow-400" onclick="toggleSettings()" id="nav-settings">⚙️ Settings</button>
+      <div id="settingsMenu" class="absolute right-0 mt-2 bg-gray-800 text-white rounded shadow-lg p-2 flex flex-col space-y-2 hidden">
+        <button onclick="alert('Settings opened')">Settings</button>
+        <button onclick="generateKey()">Generate Key</button>
+        <button onclick="redeemCode()">Redeem Code</button>
+        <button onclick="logoutUser()">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div id="app" class="flex-1 flex items-center justify-center p-6"></div>
+
+<script>
+  // --- Constants ---
+  const NOOB_AVATAR = "https://static.wikia.nocookie.net/roblox/images/3/37/Classic_Noob.png";
+  let users = [];
+  let currentUser = null;
+  let isRegistering = false;
+  const validKeys = ["CINOBE-ABCDE1234","CINOBE-FGHIJ5678","CINOBE-KLMNO9012"];
+
+  const app = document.getElementById("app");
+  const settingsMenu = document.getElementById("settingsMenu");
+
+  // --- Navbar functions ---
+  function toggleSettings() { settingsMenu.classList.toggle("hidden"); }
+  function getRobux() { if(!currentUser){ alert("Login first!"); return;} alert("You got Robux for free! 💰"); }
+
+  function generateKey() {
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let key = "CINOBE-";
+    for(let i=0;i<5;i++) key += letters[Math.floor(Math.random()*letters.length)];
+    key += Math.floor(1000 + Math.random()*9000);
+    validKeys.push(key);
+    alert("Generated key: " + key);
+  }
+
+  function redeemCode() {
+    if(!currentUser){ alert("Login first!"); return;}
+    const code = prompt("Enter your CINOBE code:");
+    if(validKeys.includes(code)) {
+      alert("Code redeemed successfully!");
+      validKeys.splice(validKeys.indexOf(code),1);
+    } else { alert("Invalid code!"); }
+  }
+
+  function updateNavbar() {
+    const navButtons = ["home","games","download","avatar","catalog","robux","settings"];
+    navButtons.forEach(id => {
+      const btn = document.getElementById("nav-" + id);
+      if(currentUser){
+        btn.disabled = false;
+        btn.classList.remove("opacity-50","cursor-not-allowed");
+      } else {
+        btn.disabled = true;
+        btn.classList.add("opacity-50","cursor-not-allowed");
+      }
+    });
+  }
+
+  // --- Pages ---
+  function renderHomePage() {
+    app.innerHTML = `
+      <div class="text-center">
+        <h1 class="text-3xl font-bold mb-4">Welcome, ${currentUser.username}!</h1>
+        <img src="${currentUser.avatar}" class="w-24 h-24 rounded-full mx-auto mb-4" />
+        <p class="text-lg">${currentUser.isNewUser ? "Thanks for joining us!" : "Glad to see you again!"}</p>
+      </div>
+    `;
+  }
+  function renderGamesPage() { app.innerHTML = "<h2 class='text-2xl font-bold'>Games</h2><p>All CINOBE games will appear here.</p>"; }
+  function renderDownloadPage() { app.innerHTML = "<h2 class='text-2xl font-bold'>Download</h2><p>Download CINOBE files here.</p>"; }
+  function renderAvatarPage() { app.innerHTML = "<h2 class='text-2xl font-bold'>Avatar</h2><p>Customize your avatar here.</p>"; }
+  function renderCatalogPage() { app.innerHTML = "<h2 class='text-2xl font-bold'>Catalog</h2><p>Browse free items here.</p>"; }
+  function renderPage(page) {
+    if(!currentUser){ alert("You must log in first!"); return;}
+    switch(page){
+      case 'home': renderHomePage(); break;
+      case 'games': renderGamesPage(); break;
+      case 'download': renderDownloadPage(); break;
+      case 'avatar': renderAvatarPage(); break;
+      case 'catalog': renderCatalogPage(); break;
+    }
+  }
+
+  function logoutUser() { currentUser=null; updateNavbar(); renderLoginPage(); }
+
+  // --- Login/Register ---
+  function renderLoginPage() {
+    app.innerHTML = `
+      <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
+        <h2 class="text-3xl font-bold mb-6 text-center">${isRegistering ? "Register" : "Login"}</h2>
+        <input id="username" placeholder="Username" class="w-full p-3 mb-4 border rounded-lg" />
+        <input id="password" type="password" placeholder="Password" class="w-full p-3 mb-4 border rounded-lg" />
+        ${isRegistering ? '<input id="key" placeholder="CINOBE-XXXXX0000" class="w-full p-3 mb-4 border rounded-lg" />' : ''}
+        <button class="w-full py-3 mb-4 ${isRegistering?'bg-blue-600':'bg-green-600'} text-white font-bold rounded-lg hover:bg-opacity-90" onclick="${isRegistering?'registerUser()':'loginUser()'}">
+          ${isRegistering ? "Register" : "Login"}
+        </button>
+        <p class="text-center text-blue-600 cursor-pointer hover:underline" onclick="toggleAuth()">
+          ${isRegistering ? "Already have an account? Login" : "Don't have an account? Register"}
+        </p>
+      </div>
+    `;
+    updateNavbar(); // disable navbar for unauthenticated users
+  }
+
+  function toggleAuth() { isRegistering=!isRegistering; renderLoginPage(); }
+
+  function validateKeyFormat(key){ return /^CINOBE-[A-Z]{5}\d{4}$/.test(key); }
+
+  function registerUser(){
+    const username=document.getElementById("username").value.trim();
+    const password=document.getElementById("password").value.trim();
+    const key=document.getElementById("key").value.trim().toUpperCase();
+    if(!username||!password||!key) return alert("Fill all fields!");
+    if(!validateKeyFormat(key)||!validKeys.includes(key)) return alert("Invalid or used key!");
+    if(users.find(u=>u.username===username)) return alert("Username exists!");
+    const newUser={username,password,avatar:NOOB_AVATAR,isNewUser:true};
+    users.push(newUser);
+    validKeys.splice(validKeys.indexOf(key),1);
+    currentUser=newUser;
+    alert("Welcome to CINOBE, " + currentUser.username + "!");
+    updateNavbar();
+    renderHomePage();
+  }
+
+  function loginUser(){
+    const username=document.getElementById("username").value.trim();
+    const password=document.getElementById("password").value.trim();
+    const user=users.find(u=>u.username===username&&u.password===password);
+    if(!user) return alert("Invalid credentials!");
+    user.isNewUser=false;
+    currentUser=user;
+    alert("Welcome back, " + currentUser.username + "!");
+    updateNavbar();
+    renderHomePage();
+  }
+
+  // Initial load
+  renderLoginPage();
+</script>
+</body>
+</html>
